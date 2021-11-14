@@ -49,7 +49,7 @@ class _TextToSpeechState extends State<TextToSpeech> {
 
   @override
   void initState() {
-    // TODO: implement initState
+    
     _flutterTts.setLanguage("ru-RU");
     super.initState();
     initializeTts();
