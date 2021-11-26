@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
+import 'package:camera/camera.dart';
+import 'package:starflut/starflut.dart';
+import 'dart:async';
 
 void main() {
   runApp(MyApp());
@@ -29,6 +32,9 @@ class _TextToSpeechState extends State<TextToSpeech> {
   final TextEditingController _controller = TextEditingController();
   final _flutterTts = FlutterTts();
 
+  bool _buttonPressed = false;
+  bool _loopActive = false;
+
   void initializeTts() {
     _flutterTts.setStartHandler(() {
       setState(() {
@@ -51,8 +57,27 @@ class _TextToSpeechState extends State<TextToSpeech> {
   void initState() {
     
     _flutterTts.setLanguage("ru-RU");
+    _flutterTts.awaitSpeakCompletion(true);
     super.initState();
     initializeTts();
+  }
+
+  void speakWhilePressed() async {
+    if (_loopActive) return;
+    _loopActive = true;
+    while(_buttonPressed){
+      if (!isSpeaking){
+        if (_controller.text.isNotEmpty) {
+          print(isSpeaking);
+          await _flutterTts.speak(_controller.text);
+          await Future.delayed(Duration(milliseconds: _controller.text.length * 100), () {
+            
+          });
+          print(_controller.text.length);
+        }
+      }
+    }
+    _loopActive = false;
   }
 
   void speak() async {
@@ -89,11 +114,30 @@ class _TextToSpeechState extends State<TextToSpeech> {
               controller: _controller,
             ),
           ),
-          ElevatedButton(
-            onPressed: () {
-              isSpeaking ? stop() : speak();
-            },
-            child: Text(isSpeaking ? "Стоп" : "Произнести"),
+          // Listener(
+          //     onPointerDown: (details) {
+          //       _buttonPressed = true;
+          //       speakWhilePressed();
+          //     },
+          //     onPointerUp: (details) {
+          //       _buttonPressed = false;
+          //     },
+          //     child: Container(
+          //       decoration: BoxDecoration(color: Colors.orange, border: Border.all()),
+          //       padding: EdgeInsets.all(16.0),
+          //       child: Text('Anime'),
+            // ),
+            ElevatedButton(
+              onPressed: () async {
+                if (isSpeaking){
+                  _buttonPressed = false;
+                  stop();
+                }else{
+                  _buttonPressed = true;
+                  speakWhilePressed();
+                }
+              },
+              child: Text(isSpeaking ? "Стоп" : "Произнести"),
           ),
         ],
       ),

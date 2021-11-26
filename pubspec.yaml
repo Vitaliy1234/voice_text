@@ -22,6 +22,8 @@ environment:
 
 dependencies:
   flutter_tts: ^3.1.0
+  camera: ^0.9.4+5
+  starflut: ^1.0.0
   flutter:
     sdk: flutter
 
