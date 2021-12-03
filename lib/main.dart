@@ -87,8 +87,11 @@ class _TextToSpeechState extends State<TextToSpeech> {
   }
 
   void stop() async {
+    print('here0');
     await _flutterTts.stop();
+    print('here');
     setState(() {
+      _loopActive = false;
       isSpeaking = false;
     });
   }
@@ -129,15 +132,16 @@ class _TextToSpeechState extends State<TextToSpeech> {
             // ),
             ElevatedButton(
               onPressed: () async {
-                if (isSpeaking){
+                if (_buttonPressed){
                   _buttonPressed = false;
                   stop();
                 }else{
+                  print('anime');
                   _buttonPressed = true;
                   speakWhilePressed();
                 }
               },
-              child: Text(isSpeaking ? "Стоп" : "Произнести"),
+              child: Text(_buttonPressed ? "Остановить" : "Произносить"),
           ),
         ],
       ),
