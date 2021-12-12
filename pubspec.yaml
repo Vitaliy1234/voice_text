@@ -21,6 +21,8 @@ environment:
   sdk: ">=2.12.0 <3.0.0"
 
 dependencies:
+  path_provider: ^2.0.8
+  image: ^2.1.19
   flutter_tts: ^3.1.0
   camera: ^0.9.4+5
   starflut: ^1.0.0

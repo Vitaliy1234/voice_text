@@ -1,8 +1,14 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:camera/camera.dart';
+import 'dart:io';
+import 'package:path_provider/path_provider.dart';
+import 'package:image/image.dart' as imglib;
 import 'package:starflut/starflut.dart';
 import 'dart:async';
+import 'dart:typed_data';
 
 void main() {
   runApp(MyApp());
@@ -45,6 +51,9 @@ class _TextToSpeechState extends State<TextToSpeech> {
 
   List<CameraDescription> _cameras = [];
   late CameraController _controller_camera;
+
+  late Image returnedImage;
+  bool imageDone = false;
 
 
   void initializeTts() {
@@ -113,7 +122,6 @@ class _TextToSpeechState extends State<TextToSpeech> {
 
   void _processCameraImage(CameraImage image) async {
   setState(() {
-    print('image saved');
     _savedImage = image;
   });
 }
@@ -160,15 +168,71 @@ class _TextToSpeechState extends State<TextToSpeech> {
 
   void imageToText(CameraImage img) async {
     String to_speech;
-    to_speech = await pythonScriptRun(img); //Питон скрипт
+    returnedImage = await convertYUV420toImageColor(img);
+    print(returnedImage);
+    print(returnedImage.runtimeType);
+    print(returnedImage.toString());
+    setState(() {
+      imageDone = true;
+    });
+    to_speech = await pythonScriptRun(returnedImage); //Питон скрипт
     await _flutterTts.speak(to_speech);
     setState(() {
       _buttonPressed = false;
     });
+    
   }
 
-  String pythonScriptRun(CameraImage img){
+  String pythonScriptRun(Image img){
     return 'на картинке аниме';
+  }
+
+  final shift = (0xFF << 24);
+  Future<Image> convertYUV420toImageColor(CameraImage image) async {
+      try {
+        final int width = image.width;
+        final int height = image.height;
+        final int uvRowStride = image.planes[1].bytesPerRow;
+        final int uvPixelStride = image.planes[1].bytesPerPixel as int;
+
+        print("uvRowStride: " + uvRowStride.toString());
+        print("uvPixelStride: " + uvPixelStride.toString());
+
+        // imgLib -> Image package from https://pub.dartlang.org/packages/image
+        var img = imglib.Image(width, height); // Create Image buffer
+
+        // Fill image buffer with plane[0] from YUV420_888
+        for(int x=0; x < width; x++) {
+          for(int y=0; y < height; y++) {
+            final int uvIndex = uvPixelStride * (x/2).floor() + uvRowStride*(y/2).floor();
+            final int index = y * width + x;
+
+            final yp = image.planes[0].bytes[index];
+            final up = image.planes[1].bytes[uvIndex];
+            final vp = image.planes[2].bytes[uvIndex];
+            // Calculate pixel color
+            int r = (yp + vp * 1436 / 1024 - 179).round().clamp(0, 255);
+            int g = (yp - up * 46549 / 131072 + 44 -vp * 93604 / 131072 + 91).round().clamp(0, 255);
+            int b = (yp + up * 1814 / 1024 - 227).round().clamp(0, 255);     
+            // color: 0x FF  FF  FF  FF 
+            //           A   B   G   R
+            img.data[index] = shift | (b << 16) | (g << 8) | r;
+          }
+        }
+
+        imglib.PngEncoder pngEncoder = new imglib.PngEncoder(level: 0, filter: 0);
+        List<int> png = pngEncoder.encodeImage(img);
+        print(png.join(' '));
+        bool muteYUVProcessing = false;
+        Uint8List uint8List;
+        uint8List = Uint8List.fromList(png); 
+        print(uint8List);
+        return Image.memory(uint8List);  
+      } catch (e) {
+        print(">>>>>>>>>>>> ERROR:" + e.toString());
+      }
+      var anime = null;
+      throw anime;
   }
 
   @override
@@ -178,11 +242,13 @@ class _TextToSpeechState extends State<TextToSpeech> {
         title: Text("Text To Speech"),
       ),
       body: Center(
-          child:
-            (_cameraInitialized)
-            ? AspectRatio(aspectRatio: _camera.value.aspectRatio,
+          child:Column(children: [(_cameraInitialized)
+            ? AspectRatio(aspectRatio: 1,
                 child: CameraPreview(_camera),)
-            : CircularProgressIndicator()
+            : CircularProgressIndicator(),
+            (imageDone) ? returnedImage: CircularProgressIndicator()
+            ],)
+            
         ),
           // Listener(
           //     onPointerDown: (details) {
