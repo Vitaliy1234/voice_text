@@ -55,6 +55,8 @@ class _TextToSpeechState extends State<TextToSpeech> {
   late Image returnedImage;
   bool imageDone = false;
 
+  
+
 
   void initializeTts() {
     _flutterTts.setStartHandler(() {
@@ -191,6 +193,8 @@ class _TextToSpeechState extends State<TextToSpeech> {
   Future<Image> convertYUV420toImageColor(CameraImage image) async {
       try {
         final int width = image.width;
+        print(image.width);
+        print(image.height);
         final int height = image.height;
         final int uvRowStride = image.planes[1].bytesPerRow;
         final int uvPixelStride = image.planes[1].bytesPerPixel as int;
@@ -219,9 +223,13 @@ class _TextToSpeechState extends State<TextToSpeech> {
             img.data[index] = shift | (b << 16) | (g << 8) | r;
           }
         }
+        print(img.data);
+        print(img.length);
 
         imglib.PngEncoder pngEncoder = new imglib.PngEncoder(level: 0, filter: 0);
+        
         List<int> png = pngEncoder.encodeImage(img);
+        print(png.length);
         print(png.join(' '));
         bool muteYUVProcessing = false;
         Uint8List uint8List;
@@ -237,19 +245,33 @@ class _TextToSpeechState extends State<TextToSpeech> {
 
   @override
   Widget build(BuildContext context) {
+    // final globalKey = GlobalKey<ScaffoldState>();
+    // double height_appbar = Scaffold.of(context).appBarMaxHeight as double;
+    // double height_full = MediaQuery.of(context).size.height;
+    // double width_full = MediaQuery.of(context).size.width;
+    // height_full = height_full - height_appbar;
+
+
     return Scaffold(
       appBar: AppBar(
+        elevation : 0,
         title: Text("Text To Speech"),
+        centerTitle: true,
       ),
-      body: Center(
-          child:Column(children: [(_cameraInitialized)
-            ? AspectRatio(aspectRatio: 1,
-                child: CameraPreview(_camera),)
-            : CircularProgressIndicator(),
-            (imageDone) ? returnedImage: CircularProgressIndicator()
-            ],)
-            
-        ),
+      // body: Center(
+      //     child:Column(children: [(_cameraInitialized)
+      //       ? AspectRatio(aspectRatio: 1,
+      //           child: CameraPreview(_camera),)
+      //       : CircularProgressIndicator(),
+      //       (imageDone) ? returnedImage: CircularProgressIndicator()
+      //       ],)
+        body: Center(
+        child:(_cameraInitialized)
+          ? AspectRatio(aspectRatio: 0.65,
+            child:  CameraPreview(_camera),
+      ): CircularProgressIndicator(),
+    ) ,
+
           // Listener(
           //     onPointerDown: (details) {
           //       _buttonPressed = true;
